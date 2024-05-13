@@ -126,7 +126,6 @@ ypos = 0 #inisialisasi posisi y
 myarena[ypos][xpos] = 1
 pair = [2, 3, 0, 1] # ket : 0 = Atas , 1 = Kanan, 2 = Bawah, 3 = kiri ; relatif terhadap posisi awal robot; pair adalah varible yang berlawanan dengan keadaannya
 current_move = 0
-next_move = 0
 
 def move_forward():
     pause_event_tempuh.clear()
