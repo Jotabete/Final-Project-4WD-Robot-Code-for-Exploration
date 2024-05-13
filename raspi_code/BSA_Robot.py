@@ -142,45 +142,45 @@ def searchzero(arena, xpos, ypos):
             
     return(outputmovement)
 
-# Dummy arena    
-myarena = [[0 for i in range(15)] for i in range(9)]
-xpos = 0
-ypos = 0
-myarena[ypos][xpos] = 1
-lastaction = 1
-
-# Bergerak di arena
-while True:
-    action = nextmove(lastaction, myarena, xpos, ypos)
-    if (action == 0):
-        ypos -= 1
-        myarena[ypos][xpos] = 1
-    elif (action == 1):
-        xpos += 1
-        myarena[ypos][xpos] = 1
-    elif (action == 2):
-        ypos += 1
-        myarena[ypos][xpos] = 1
-    elif (action == 3):
-        xpos -= 1
-        myarena[ypos][xpos] = 1
-    else:
-        rlmove = searchzero(myarena, xpos, ypos)
-        if (rlmove == "reject"):
-            break
-        else:
-            for i in rlmove:
-                if (i == 0):
-                    ypos -= 1
-                    myarena[ypos][xpos] = 1
-                elif (i == 1):
-                    xpos += 1
-                    myarena[ypos][xpos] = 1
-                elif (i == 2):
-                    ypos += 1
-                    myarena[ypos][xpos] = 1
-                else:
-                    xpos -= 1
-                    myarena[ypos][xpos] = 1
-                action = i
-    lastaction = action
+# # Dummy arena    
+# myarena = [[0 for i in range(15)] for i in range(9)]
+# xpos = 0
+# ypos = 0
+# myarena[ypos][xpos] = 1
+# lastaction = 1
+# 
+# # Bergerak di arena
+# while True:
+#     action = nextmove(lastaction, myarena, xpos, ypos)
+#     if (action == 0):
+#         ypos -= 1
+#         myarena[ypos][xpos] = 1
+#     elif (action == 1):
+#         xpos += 1
+#         myarena[ypos][xpos] = 1
+#     elif (action == 2):
+#         ypos += 1
+#         myarena[ypos][xpos] = 1
+#     elif (action == 3):
+#         xpos -= 1
+#         myarena[ypos][xpos] = 1
+#     else:
+#         rlmove = searchzero(myarena, xpos, ypos)
+#         if (rlmove == "reject"):
+#             break
+#         else:
+#             for i in rlmove:
+#                 if (i == 0):
+#                     ypos -= 1
+#                     myarena[ypos][xpos] = 1
+#                 elif (i == 1):
+#                     xpos += 1
+#                     myarena[ypos][xpos] = 1
+#                 elif (i == 2):
+#                     ypos += 1
+#                     myarena[ypos][xpos] = 1
+#                 else:
+#                     xpos -= 1
+#                     myarena[ypos][xpos] = 1
+#                 action = i
+#     lastaction = action
