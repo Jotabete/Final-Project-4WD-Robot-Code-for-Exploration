@@ -12,10 +12,13 @@ jarakTempuh_x = 0.0
 jarakTempuh_y = 0.0
 posisi_x = 0
 posisi_y = 0
+count = 0 
+jarakTempuh = 0
+
 
 # Fungsi untuk membaca sensor dalam thread terpisah
 def tempuh_to_posgrid(pause_event, sensorPin):
-    global counter_x, counter_y, jarakTempuh_x, jarakTempuh_y, posisi_x, posisi_y, previousState, direction, orientation
+    global counter_x, counter_y, jarakTempuh_x, jarakTempuh_y, posisi_x, posisi_y, previousState, direction, orientation, count, jarakTempuh
     # Konstanta untuk perhitungan jarak tempuh
     kelilingRoda = 21.2  # Keliling roda dalam cm
     jumlahLubangPerPutaran = 20  # Jumlah lubang per putaran encoder
@@ -49,7 +52,7 @@ def tempuh_to_posgrid(pause_event, sensorPin):
                 else:
                     posisi_y = math.ceil(jarakTempuh_y/50)
             
-            if orientation == 1 : # hitung sumbu x
+            elif orientation == 1 : # hitung sumbu x
                 # Menambahkan satu pada hitungan
                 counter_x += direction
                 #print(counter_x)
@@ -61,9 +64,12 @@ def tempuh_to_posgrid(pause_event, sensorPin):
                 if jarakTempuh_x >= 0:
                     posisi_x = math.floor(jarakTempuh_x/50)
                 else:
-                    posisi_x = math.ceil(jarakTempuh_x/50)            
+                    posisi_x = math.ceil(jarakTempuh_x/50)
             
-            #print(f"Posisi x : {posisi_x}, Posisi y : {posisi_y}")
+            count += direction
+            jarakTempuh = (count * kelilingRoda) / jumlahLubangPerPutaran
+            if jarakTempuh >= 50:
+                count = 0
 
         # Memperbarui status sebelumnya
         previousState = currentState

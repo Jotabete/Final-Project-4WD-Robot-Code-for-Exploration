@@ -17,8 +17,6 @@ from BSA_Robot import nextmove, searchzero
 import sensor_imu
 import sensor_jarak_tempuh
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-
 # Set mode pin GPIO
 GPIO.setmode(GPIO.BCM)
 
@@ -125,22 +123,25 @@ xpos = 0 #inisialisasi posisi x
 ypos = 0 #inisialisasi posisi y
 myarena[ypos][xpos] = 1
 pair = [2, 3, 0, 1] # ket : 0 = Atas , 1 = Kanan, 2 = Bawah, 3 = kiri ; relatif terhadap posisi awal robot; pair adalah varible yang berlawanan dengan keadaannya
-current_move = 0
+current_move = 1
 
 def move_forward():
     pause_event_tempuh.clear()
-    if sensor_imu.pitch >= 20: # kemiringan pitch robot (jalan menanjak)
+    if sensor_imu.pitch >= 20: # cek kemiringan pitch robot (jalan menanjak)
+        stop(IN1, IN2, IN3, IN4)
+        time.sleep(1)
+        x_naik = xpos
+        y_naik = ypos
         move_backward()
         # lalu set arah tersebut menjadi obstacle
+        myarena[y_naik][x_naik] = 6
     else:
-        print("forward")
-        forward(IN1, IN2, IN3, IN4)
-        time.sleep(1) 
-        # waktu coba disesuaikan lagi, robot maju dari titik tengah awal ke titik tengah selanjutnya sejauh 50 cm butuh berapa detik ........
+        while sensor_jarak_tempuh.jarakTempuh < 50:
+            forward(IN1, IN2, IN3, IN4)
+            time.sleep(0.001)
     
 def move_right():
     pause_event_tempuh.set()
-    print("right")
     while sensor_imu.rotation_angle_z > -65: #harusnya 90
         right(IN1, IN2, IN3, IN4)
         time.sleep(0.1)
@@ -150,7 +151,6 @@ def move_right():
     
 def move_left():
     pause_event_tempuh.set()
-    print("left")
     while sensor_imu.rotation_angle_z < 65: #harusnya 90
         left(IN1, IN2, IN3, IN4)
         time.sleep(0.1)
@@ -158,29 +158,83 @@ def move_left():
     time.sleep(1)
     sensor_imu.rotation_angle_z = 0
 
-def move_backward(): # mending mundur atau putar balik???????????
+def move_backward(): 
     pause_event_tempuh.clear()
-    print("back")
-    backward(IN1, IN2, IN3, IN4)
+    while sensor_jarak_tempuh.jarakTempuh > -50: #50 cm
+        backward(IN1, IN2, IN3, IN4)
+        time.sleep(0.001)
+        
+def turn_back():
+    pause_event_tempuh.set()
+    while sensor_imu.rotation_angle_z < 180: #perlu disesuaikan lagi dengan keadaan riil (apakah tepat 180 atau tidak, seperti saat belok)
+        left(IN1, IN2, IN3, IN4)
+        time.sleep(0.1)
+    stop(IN1, IN2, IN3, IN4)
     time.sleep(1)
+    sensor_imu.rotation_angle_z = 0
 
-def check_around():
-    global myarena, xpos, ypos
-    # fungsi untuk mengecek obstacle di sekitar
+def read_front():
+    global front_distance
     front_distance  = measure_distance(FRONT_TRIG_PIN, FRONT_ECHO_PIN)
-    back_distance   = measure_distance(BACK_TRIG_PIN, BACK_ECHO_PIN)
+
+def read_right()
+    global right_distance
     right_distance  = measure_distance(RIGHT_TRIG_PIN, RIGHT_ECHO_PIN)
+    
+def read_left()    
+    global left_distance
     left_distance   = measure_distance(LEFT_TRIG_PIN, LEFT_ECHO_PIN)
     
-    #pengkondisiian untuk update arena
-    if front_distance <= 12:
-        myarena[xpos-1][ypos] = 6  # Tandai rintangan di atas
-    if right_distance <= 16:
-        myarena[xpos][ypos+1] = 6  # Tandai rintangan di kanan
-    if left_distance <= 16:
-        myarena[xpos][ypos-1] = 6  # Tandai rintangan di kiri
-    if back_distance <= 12:
-        myarena[xpos+1][ypos] = 6  # Tandai rintangan di bawah
+def read_back()    
+    global back_distance
+    back_distance   = measure_distance(BACK_TRIG_PIN, BACK_ECHO_PIN)
+    
+def check_around(): #dibikinikan zakie
+    # global myarena, xpos, ypos
+    # # fungsi untuk mengecek obstacle di sekitar
+    # front_distance  = measure_distance(FRONT_TRIG_PIN, FRONT_ECHO_PIN)
+    # back_distance   = measure_distance(BACK_TRIG_PIN, BACK_ECHO_PIN)
+    # right_distance  = measure_distance(RIGHT_TRIG_PIN, RIGHT_ECHO_PIN)
+    # left_distance   = measure_distance(LEFT_TRIG_PIN, LEFT_ECHO_PIN)
+    
+    # #pengkondisiian untuk update arena
+    # if front_distance <= 12:
+        # myarena[xpos-1][ypos] = 6  # Tandai rintangan di atas
+    # if right_distance <= 16:
+        # myarena[xpos][ypos+1] = 6  # Tandai rintangan di kanan
+    # if left_distance <= 16:
+        # myarena[xpos][ypos-1] = 6  # Tandai rintangan di kiri
+    # if back_distance <= 12:
+        # myarena[xpos+1][ypos] = 6  # Tandai rintangan di bawah
+        
+def pergerakan_robot():
+    global current_move, next_move, pair, xpos, ypos, arah
+    #fungsi untuk pergerakan robot
+    if current_move == next_move:  
+        move_forward()
+    else:
+        if current_move != pair[next_move]:
+            if next_move > current_move:
+                move_right()
+                move_forward()
+            else:
+                move_left()
+                move_forward()
+        else:
+            turn_back()
+            move_forward()
+    
+    xpos = sensor_jarak_tempuh.posisi_x
+    ypos = sensor_jarak_tempuh.posisi_y
+    print(f"arah = {arah} ; (x,y) = ({xpos},{ypos})")
+    
+    current_move = next_move
+    
+    stop(IN1, IN2, IN3, IN4)
+    time.sleep(1)
+    #fungsi untuk cek keadaan sekitar (menandai obstale & mencari jalan yang bisa dilalui)
+    check_around()
+    time.sleep(1)
 
 def cleanup():
     # Matikan GPIO
@@ -219,72 +273,61 @@ if __name__ == "__main__":
         while True:
             #fungsi menentukan gerak selanjutnya
             next_move = nextmove(current_move, myarena, xpos, ypos)
-            
             # Lokalisasi
-            if next_move == 0: # atas
+            if next_move == 0: # atas y--
+                #sebelum gerak, ubah parameter fungsi di sensor_jarak_tempuh
                 sensor_jarak_tempuh.orientation = 0
                 sensor_jarak_tempuh.direction = -1
                 myarena[ypos][xpos] = 1
-            elif next_move == 1: # kanan
+                arah = "atas"
+                pergerakan_robot()
+            elif next_move == 1: # kanan x++
                 sensor_jarak_tempuh.orientation = 1
                 sensor_jarak_tempuh.direction = 1
                 myarena[ypos][xpos] = 1
-            elif next_move == 2: # belakang
+                arah = "kanan"
+                pergerakan_robot()
+            elif next_move == 2: # belakang y++
                 sensor_jarak_tempuh.orientation = 0
                 sensor_jarak_tempuh.direction = 1
                 myarena[ypos][xpos] = 1
-            elif next_move == 3: # kiri
+                arah = "bawah"
+                pergerakan_robot()
+            elif next_move == 3: # kiri x--
                 sensor_jarak_tempuh.orientation = 1
                 sensor_jarak_tempuh.direction = -1
                 myarena[ypos][xpos] = 1
+                arah = "kiri"
+                pergerakan_robot()
             else:
                 rlmove = searchzero(myarena, xpos, ypos)
                 if (rlmove == "reject"):
                     break
                 else:
                     for i in rlmove:
-                        if (i == 0): #atas              
+                        if (i == 0): #atas y--              
                             sensor_jarak_tempuh.orientation = 0
                             sensor_jarak_tempuh.direction = -1
                             myarena[ypos][xpos] = 1
-                        elif (i == 1): #kanan
+                            arah = "atas"
+                        elif (i == 1): #kanan x++
                             sensor_jarak_tempuh.orientation = 1
                             sensor_jarak_tempuh.direction = 1
                             myarena[ypos][xpos] = 1
-                        elif (i == 2):# belakang
+                            arah = "kanan"
+                        elif (i == 2):# belakang y++
                             sensor_jarak_tempuh.orientation = 0
                             sensor_jarak_tempuh.direction = 1
                             myarena[ypos][xpos] = 1
-                        else:# kiri
+                            arah = "bawah"
+                        else:# kiri x--
                             sensor_jarak_tempuh.orientation = 1
                             sensor_jarak_tempuh.direction = -1
                             myarena[ypos][xpos] = 1
-                        next_move = i   
-            #pergerakan robot
-            if current_move == next_move:  
-                move_forward()
-            else:
-                if current_move != pair[next_move]:
-                    if next_move > current_move:
-                        move_right()
-                        move_forward()
-                    else:
-                        move_left()
-                        move_forward()
-                else:
-                    move_backward() #mending mundur apa putar balik???
-            
-            xpos = sensor_jarak_tempuh.posisi_x
-            ypos = sensor_jarak_tempuh.posisi_y
-            print(f"(x,y) = ({xpos},{ypos})")
-            current_move = next_move
-            
-            stop(IN1, IN2, IN3, IN4)
-            time.sleep(1)
-            #fungsi untuk cek keadaan sekitar (menandai obstale & mencari jalan yang bisa dilalui)
-            check_around()
-            time.sleep(1)
-
+                            arah = "kiri"
+                        next_move = i
+                        pergerakan_robot()
+                        
     except KeyboardInterrupt:
         # Tangkap KeyboardInterrupt (Ctrl+C) untuk membersihkan GPIO
         pause_event_tempuh.set()
