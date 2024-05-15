@@ -120,7 +120,7 @@ myarena = [[0 for i in range(15)] for i in range(9)]
 # - angka 6 = untuk obstacle
 
 xpos = 0 #inisialisasi posisi x
-ypos = 0 #inisialisasi posisi y
+ypos = 1 #inisialisasi posisi y
 myarena[ypos][xpos] = 1
 pair = [2, 3, 0, 1] # ket : 0 = Atas , 1 = Kanan, 2 = Bawah, 3 = kiri ; relatif terhadap posisi awal robot; pair adalah varible yang berlawanan dengan keadaannya
 current_move = 1
@@ -136,9 +136,11 @@ def move_forward():
         # lalu set arah tersebut menjadi obstacle
         myarena[y_naik][x_naik] = 6
     else:
-        while sensor_jarak_tempuh.jarakTempuh < 50:
-            forward(IN1, IN2, IN3, IN4)
-            time.sleep(0.001)
+        forward(IN1, IN2, IN3, IN4)
+        time.sleep(0.8)
+#         while sensor_jarak_tempuh.jarakTempuh < 50:
+#             forward(IN1, IN2, IN3, IN4)
+#             time.sleep(0.1)
     
 def move_right():
     pause_event_tempuh.set()
@@ -160,9 +162,11 @@ def move_left():
 
 def move_backward(): 
     pause_event_tempuh.clear()
-    while sensor_jarak_tempuh.jarakTempuh > -50: #50 cm
-        backward(IN1, IN2, IN3, IN4)
-        time.sleep(0.001)
+    backward(IN1, IN2, IN3, IN4)
+    time.sleep(1)
+#     while sensor_jarak_tempuh.jarakTempuh > -50: #50 cm
+#         backward(IN1, IN2, IN3, IN4)
+#         time.sleep(0.1)
         
 def turn_back():
     pause_event_tempuh.set()
@@ -174,42 +178,211 @@ def turn_back():
     sensor_imu.rotation_angle_z = 0
 
 def read_front():
-    global front_distance
+    global front_distance, myarena
     front_distance  = measure_distance(FRONT_TRIG_PIN, FRONT_ECHO_PIN)
+    print("depan :", front_distance)
+    if front_distance <= 12:
+        if current_move == 0 and ypos != 0:
+            myarena[ypos-1][xpos] = 6  # Tandai rintangan di atas
+        elif current_move == 1 and xpos != 14:
+            myarena[ypos][xpos+1] = 6  # Tandai rintangan di atas
+        elif current_move == 2 and ypos != 8:
+            myarena[ypos+1][xpos] = 6  # Tandai rintangan di atas
+        elif current_move == 3 and xpos != 0:
+            myarena[ypos][xpos-1] = 6  # Tandai rintangan di atas
 
-def read_right()
-    global right_distance
+def read_right():
+    global right_distance, myarena
     right_distance  = measure_distance(RIGHT_TRIG_PIN, RIGHT_ECHO_PIN)
-    
-def read_left()    
-    global left_distance
+    print("kanan:", right_distance)
+    if right_distance <= 16:
+        myarena[ypos][xpos+1] = 6  # Tandai rintangan di atas
+        
+def read_left():    
+    global left_distance, myarena
     left_distance   = measure_distance(LEFT_TRIG_PIN, LEFT_ECHO_PIN)
+    print("kiri :", left_distance)
+    if left_distance <= 16:
+        myarena[ypos][xpos-1] = 6  # Tandai rintangan di atas
     
-def read_back()    
-    global back_distance
+def read_back():    
+    global back_distance, myarena
     back_distance   = measure_distance(BACK_TRIG_PIN, BACK_ECHO_PIN)
+    print("blkg :",back_distance)
+    if back_distance <=12:
+        myarena[ypos+1][xpos] = 6  # Tandai rintangan di atas
     
 def check_around(): #dibikinikan zakie
-    # global myarena, xpos, ypos
-    # # fungsi untuk mengecek obstacle di sekitar
-    # front_distance  = measure_distance(FRONT_TRIG_PIN, FRONT_ECHO_PIN)
-    # back_distance   = measure_distance(BACK_TRIG_PIN, BACK_ECHO_PIN)
-    # right_distance  = measure_distance(RIGHT_TRIG_PIN, RIGHT_ECHO_PIN)
-    # left_distance   = measure_distance(LEFT_TRIG_PIN, LEFT_ECHO_PIN)
-    
-    # #pengkondisiian untuk update arena
-    # if front_distance <= 12:
-        # myarena[xpos-1][ypos] = 6  # Tandai rintangan di atas
-    # if right_distance <= 16:
-        # myarena[xpos][ypos+1] = 6  # Tandai rintangan di kanan
-    # if left_distance <= 16:
-        # myarena[xpos][ypos-1] = 6  # Tandai rintangan di kiri
-    # if back_distance <= 12:
-        # myarena[xpos+1][ypos] = 6  # Tandai rintangan di bawah
+    global myarena, xpos, ypos, current_move
+    #pengkondisiian untuk update arena
+    if xpos == 0 :
+        if ypos == 0: #corner kiri atas
+            if current_move == 0: 
+                # depan & kiri gausah dicek
+                read_back()
+                read_right()
+            elif current_move == 1: 
+                # belakang & kiri gausah dicek
+                read_front()
+                read_right()
+            elif current_move == 2: 
+                # belakang & kanan gausah dicek
+                read_front()
+                read_left()
+            elif current_move == 3: 
+                # depan kanan ga dicek
+                read_back()
+                read_left()
+        elif ypos == 8: #corner kiri bawah
+            if current_move == 0: 
+                #blkg & kiri gausah dicek
+                read_front()
+                read_right()
+            elif current_move == 1: 
+                #blkg & kanan gausah dicek
+                read_front()
+                read_left()
+            elif current_move == 2: 
+                #bdepan & kanan gausah dicek
+                read_back()
+                read_left()
+            elif current_move == 3:
+                read_back()
+                read_right()
+        else:
+            if current_move == 0: 
+                #kiri ga dicek
+                read_front()
+                read_back()
+                read_right()
+            elif current_move == 1: 
+                #blkg ga dicek
+                read_front()
+                read_left()
+                read_right()
+            elif current_move == 2: 
+                #kanan ga dicek
+                read_front()
+                read_back()
+                read_left()
+            elif current_move == 3: 
+                #depan ga dicek
+                read_back()
+                read_back()
+                read_right()
+    elif xpos == 14 :
+        if ypos == 0: #corner kanan atas 
+            if current_move == 0: #corner
+                #depan & kanan gausah dicek
+                read_back()
+                read_left()
+            elif current_move == 1: #corner
+                #depan & kiri gausah dicek
+                read_back()
+                read_right()
+            elif current_move == 2: #corner
+                #belakang & kiri gausah dicek
+                read_front()
+                read_right()
+            elif current_move == 3: #corner
+                #blkg kanan
+                read_front()
+                read_left()
+        elif ypos == 8: #corner kanan bawah
+            if current_move == 0: #corner
+                #blkg & kanan gausah dicek
+                read_front()
+                read_left()
+            elif current_move == 1: #corner
+                #depan & kanan gausah dicek
+                read_back()
+                read_left()
+            elif current_move == 2: #corner
+                #bdepan & kiri gausah dicek
+                read_back()
+                read_right()
+            elif current_move == 3: #corner
+                #blkg kiri
+                read_front()
+                read_right()
+        else :
+            if current_move == 0: #corner
+                #kanan ga dicek
+                read_front()
+                read_back()
+                read_left()
+            elif current_move == 1: #corner
+                #depan ga dicek
+                read_left()
+                read_back()
+                read_right()
+            elif current_move == 2: #corner
+                #kiri ga dicek
+                read_front()
+                read_back()
+                read_right()
+            elif current_move == 3: #corner
+                #blkg ga dicek
+                read_front()
+                read_left()
+                read_right()
+                
+    if ypos == 0 :
+        if xpos != 0 or xpos != 14 : #jika bukan corner kiri atas dan kanan atas
+            if current_move == 0: #corner
+                #depan ga dicek
+                read_left()
+                read_back()
+                read_right()
+            elif current_move == 1: #corner
+                #kiri ga dicek
+                read_front()
+                read_back()
+                read_right()
+            elif current_move == 2: #corner
+                #belakang ga dicek
+                read_front()
+                read_left()
+                read_right()
+            elif current_move == 3: #corner
+                #kanan ga dicek
+                read_front()
+                read_back()
+                read_left()
+    elif ypos == 8 :
+        if xpos != 0 or xpos != 14 : #jika bukan corner kiri bawah atau kanan bawah
+            if current_move == 0: #corner
+                #belakang ga dicek
+                read_front()
+                read_left()
+                read_right()
+            elif current_move == 1: #corner
+                #kanan ga dicek
+                read_front()
+                read_back()
+                read_left()
+            elif current_move == 2: #corner
+                #depan ga dicek
+                read_left()
+                read_back()
+                read_right()
+            elif current_move == 3: #corner
+                #kiri ga dicek
+                read_front()
+                read_back()
+                read_right()
+    if xpos != 0 or xpos != 14 or ypos != 0 or ypos != 8 : #berada di tengah 
+         # cek semua
+         read_front()
+         read_back()
+         read_right()
         
 def pergerakan_robot():
     global current_move, next_move, pair, xpos, ypos, arah
     #fungsi untuk pergerakan robot
+    #fungsi untuk cek keadaan sekitar (menandai obstale & mencari jalan yang bisa dilalui)
+    check_around()
+    time.sleep(1)
     if current_move == next_move:  
         move_forward()
     else:
@@ -221,19 +394,20 @@ def pergerakan_robot():
                 move_left()
                 move_forward()
         else:
-            turn_back()
-            move_forward()
+            move_backward()
+#             turn_back()
+#             move_forward()
     
     xpos = sensor_jarak_tempuh.posisi_x
     ypos = sensor_jarak_tempuh.posisi_y
     print(f"arah = {arah} ; (x,y) = ({xpos},{ypos})")
     
+    for i in myarena:
+        print(i)
+    
     current_move = next_move
     
     stop(IN1, IN2, IN3, IN4)
-    time.sleep(1)
-    #fungsi untuk cek keadaan sekitar (menandai obstale & mencari jalan yang bisa dilalui)
-    check_around()
     time.sleep(1)
 
 def cleanup():
