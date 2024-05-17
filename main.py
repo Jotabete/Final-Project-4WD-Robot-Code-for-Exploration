@@ -251,7 +251,10 @@ def pergerakan_robot():
         move_forward()
     else:
         if current_move != pair[next_move]:
-            if next_move > current_move:
+            if current_move == 3 and next_move == 0:
+                move_right()
+                move_forward()
+            elif next_move > current_move:
                 move_right()
                 move_forward()
             else:
